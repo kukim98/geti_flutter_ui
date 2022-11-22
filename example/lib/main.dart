@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,11 +73,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
+    return FutureBuilder<ByteData>(
       future: NetworkAssetBundle(Uri.parse('https://i.pinimg.com/originals/69/2e/64/692e6421912e29184674dd58ef9f5e18.jpg')).load(''),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done && snapshot.hasData){
-          return FutureBuilder(
+          return FutureBuilder<ui.Image>(
             future: decodeImageFromList(snapshot.data!.buffer.asUint8List()),
             builder: (context, snapshot1) {
               if (snapshot1.connectionState == ConnectionState.done && snapshot1.hasData){
