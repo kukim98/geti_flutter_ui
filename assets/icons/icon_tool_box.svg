@@ -1,0 +1,11 @@
+<svg id="icon_tool_box" xmlns="http://www.w3.org/2000/svg" width="25.5" height="25.5" viewBox="0 0 25.5 25.5">
+  <path id="패스_2138" data-name="패스 2138" d="M23,23H2.506V2.506H23ZM3.505,22H21.994V3.506H3.505Z"/>
+  <rect id="사각형_403" data-name="사각형 403" width="4.51" height="4.511" transform="translate(0.751 0.75)" fill="#fff"/>
+  <path id="패스_2139" data-name="패스 2139" d="M1.5,1.5H4.51V4.511H1.5ZM0,6.01H6.011V0H0Z"/>
+  <rect id="사각형_404" data-name="사각형 404" width="4.511" height="4.511" transform="translate(20.239 0.75)" fill="#fff"/>
+  <path id="패스_2140" data-name="패스 2140" d="M20.989,1.5H24V4.511H20.989Zm-1.5,4.51H25.5V0H19.49Z"/>
+  <rect id="사각형_405" data-name="사각형 405" width="4.511" height="4.51" transform="translate(20.239 20.239)" fill="#fff"/>
+  <path id="패스_2141" data-name="패스 2141" d="M20.989,20.989H24V24H20.989ZM19.49,25.5H25.5V19.489H19.49Z"/>
+  <rect id="사각형_406" data-name="사각형 406" width="4.51" height="4.51" transform="translate(0.751 20.239)" fill="#fff"/>
+  <path id="패스_2142" data-name="패스 2142" d="M1.5,20.989H4.51V24H1.5ZM0,25.5H6.011V19.489H0Z"/>
+</svg>
