@@ -213,7 +213,7 @@ class TransferAnnotationStorage with LocalStorage {
       _transferAnnotationMap[workspaceId]![projectId]!.remove(imageId);
       updateStorage();
     }
-    catch (error){
+    catch (_){
     }
   }
 }

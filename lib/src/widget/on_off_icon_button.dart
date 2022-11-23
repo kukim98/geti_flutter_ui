@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 class OnOffIconButton extends StatefulWidget {
-  dynamic symbol;
-  void Function() onTapFunc;
-  double size;
-  Color? iconColor;
-  Color? onIconBackgroundColor;
-  Color? offIconBackgroundColor;
+  final dynamic symbol;
+  final void Function() onTapFunc;
+  final double size;
+  final Color? iconColor;
+  final Color? onIconBackgroundColor;
+  final Color? offIconBackgroundColor;
 
-  OnOffIconButton({
+  const OnOffIconButton({
     super.key, 
     required this.symbol,
     required this.onTapFunc,

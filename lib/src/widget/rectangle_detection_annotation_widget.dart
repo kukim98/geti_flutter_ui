@@ -3,7 +3,6 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intel_geti_api/intel_geti_api.dart';
 import 'package:intel_geti_ui/src/helper/annotation_helper.dart';
 import 'package:intel_geti_ui/src/helper/ui_logic.dart';
@@ -14,32 +13,36 @@ import 'widget.dart';
 
 class DetectionAnnotationWidget extends StatefulWidget {
   // Appbar attributes
-  String onAppbarTitle;
-  Widget? onAppbarLeading;
-  List<Widget>? onAppbarActions;
-  Color? onAppbarColor;
-  String offAppbarTitle;
-  Widget? offAppbarLeading;
-  List<Widget>? offAppbarActions;
-  Color? offAppbarColor;
+  final String onAppbarTitle;
+  final Widget? onAppbarLeading;
+  final List<Widget>? onAppbarActions;
+  final Color? onAppbarColor;
+  final String offAppbarTitle;
+  final Widget? offAppbarLeading;
+  final List<Widget>? offAppbarActions;
+  final Color? offAppbarColor;
   // Widgets
-  Uint8List imageBytes;
-  int resizeHitPointRadius;
-  double maxZoom;
+  final Uint8List imageBytes;
+  final int resizeHitPointRadius;
+  final double maxZoom;
   // Bridges
-  ValueNotifier<bool> appBarOnOffStatus;
-  ValueNotifier<String> modeStatus;
-  StreamController<List<Annotation>> annotationsStatus;
-  StreamController<Annotation> selectedAnnotationStatus;
+  final ValueNotifier<bool> appBarOnOffStatus;
+  final ValueNotifier<String> modeStatus;
+  final StreamController<List<Annotation>> annotationsStatus;
+  final StreamController<Annotation> selectedAnnotationStatus;
   // GETi
-  Project project;
-  Media media;
-  String kind;
+  final Project project;
+  final Media media;
+  final String kind;
   // Initial Settings
-  List<Annotation> initialAnnotations;
+  final List<Annotation> initialAnnotations;
+  // Annotation Toolbar Settings
+  final Icon editIcon;
+  final Icon addLabelIcon;
+  final Icon deleteAnnotationIcon;
 
 
-  DetectionAnnotationWidget({
+  const DetectionAnnotationWidget({
     Key? key,
     this.onAppbarTitle = 'Annotation',
     this.onAppbarLeading,
@@ -59,7 +62,10 @@ class DetectionAnnotationWidget extends StatefulWidget {
     required this.project,
     required this.media,
     this.kind = 'annotation',
-    this.initialAnnotations = const []
+    this.initialAnnotations = const [],
+    this.editIcon = const Icon(Icons.edit),
+    this.addLabelIcon = const Icon(Icons.new_label),
+    this.deleteAnnotationIcon = const Icon(Icons.delete)
   }) : super(key: key);
 
 
@@ -86,17 +92,6 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
       widget.media.mediaInformation.width.toDouble(),
       widget.media.mediaInformation.height.toDouble()
     );
-    widget.offAppbarLeading ??= IconButton(
-        onPressed: () {
-          widget.appBarOnOffStatus.value = true;
-          allAnnotations.add(selectedAnnotation!);
-          selectedAnnotation = null;
-          widget.modeStatus.value = 'VIEW';
-          widget.annotationsStatus.add(allAnnotations);
-          widget.selectedAnnotationStatus.add(Annotation.dummy(type: 'RECTANGLE'));
-        },
-        icon: const Icon(Icons.arrow_back)
-      );
     allAnnotations = List<Annotation>.from(widget.initialAnnotations);
     super.initState();
   }
@@ -309,8 +304,28 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
     return Scaffold(
       appBar: BimodalDynamicAppBar(
         isOn: widget.appBarOnOffStatus,
-        onAppbar: AppBar(title: Text(widget.onAppbarTitle), leading: widget.onAppbarLeading, actions: widget.onAppbarActions, backgroundColor: widget.onAppbarColor),
-        offAppbar: AppBar(title: Text(widget.offAppbarTitle), leading: widget.offAppbarLeading, actions: widget.offAppbarActions, backgroundColor: widget.offAppbarColor)
+        onAppbar: AppBar(
+          title: Text(widget.onAppbarTitle),
+          leading: widget.onAppbarLeading,
+          actions: widget.onAppbarActions,
+          backgroundColor: widget.onAppbarColor
+        ),
+        offAppbar: AppBar(
+          title: Text(widget.offAppbarTitle),
+          leading: widget.offAppbarLeading ?? IconButton(
+            onPressed: () {
+              widget.appBarOnOffStatus.value = true;
+              allAnnotations.add(selectedAnnotation!);
+              selectedAnnotation = null;
+              widget.modeStatus.value = 'VIEW';
+              widget.annotationsStatus.add(allAnnotations);
+              widget.selectedAnnotationStatus.add(Annotation.dummy(type: 'RECTANGLE'));
+            },
+            icon: const Icon(Icons.arrow_back)
+          ),
+          actions: widget.offAppbarActions,
+          backgroundColor: widget.offAppbarColor
+        )
       ),
       body: Stack(
         children: [
@@ -421,13 +436,9 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       OnOffIconButton(
-                        symbol: Icon(Icons.abc),
+                        symbol: widget.editIcon,
                         onIconBackgroundColor: const Color(0xff8c8c8c),
                         offIconBackgroundColor: const Color(0xffd9d9d9),
-                        // symbol: SvgPicture.asset(
-                        //   'assets/icons/icon_tool_box.svg',
-                        //   height: AppBar().preferredSize.height * 33.36 / 59,
-                        // ),
                         onTapFunc: () {
                           if (widget.modeStatus.value == 'NEW'){
                             widget.modeStatus.value = 'VIEW';
@@ -513,7 +524,7 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                             });
                           }
                         },
-                        symbol: Icons.new_label
+                        icon: widget.addLabelIcon
                       ),
                       const Divider(height: 10.0),
                       defaultIconButton(
@@ -538,7 +549,7 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                             });
                           }
                         },
-                        symbol: Icons.delete
+                        icon: widget.deleteAnnotationIcon
                       )
                     ],
                   ),
