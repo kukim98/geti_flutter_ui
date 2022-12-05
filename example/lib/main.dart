@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -54,10 +53,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  ValueNotifier<bool> appBarOnOffStatus = ValueNotifier(true);
-  ValueNotifier<String> modeStatus = ValueNotifier('VIEW');
-  StreamController<List<Annotation>> annotationsStatus = StreamController<List<Annotation>>.broadcast();
-  StreamController<Annotation> selectedAnnotationStatus = StreamController<Annotation>.broadcast();
   Project project = Project(
     creationTime: DateTime.now(),
     creatorId: '',
@@ -91,12 +86,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   type: 'image',
                   uploadTime: DateTime.now()
                 );
-                return DetectionAnnotationWidget(
+                return ClassificationAnnotationWidget(
                   imageBytes: snapshot.data!.buffer.asUint8List(),
-                  appBarOnOffStatus: appBarOnOffStatus,
-                  modeStatus: modeStatus,
-                  annotationsStatus: annotationsStatus,
-                  selectedAnnotationStatus: selectedAnnotationStatus,
                   project: project,
                   media: media
                 );
@@ -108,5 +99,36 @@ class _MyHomePageState extends State<MyHomePage> {
         return const SizedBox.shrink();
       }
     );
+    // return FutureBuilder<ByteData>(
+    //   future: NetworkAssetBundle(Uri.parse('https://i.pinimg.com/originals/69/2e/64/692e6421912e29184674dd58ef9f5e18.jpg')).load(''),
+    //   builder: (context, snapshot) {
+    //     if (snapshot.connectionState == ConnectionState.done && snapshot.hasData){
+    //       return FutureBuilder<ui.Image>(
+    //         future: decodeImageFromList(snapshot.data!.buffer.asUint8List()),
+    //         builder: (context, snapshot1) {
+    //           if (snapshot1.connectionState == ConnectionState.done && snapshot1.hasData){
+    //             Media media = Media(
+    //               id: '',
+    //               uploaderId: '',
+    //               mediaInformation: MediaInformation(displayUrl: '', height: snapshot1.data!.height, width: snapshot1.data!.width),
+    //               name: '',
+    //               annotationStatePerTask: {},
+    //               thumbnail: '',
+    //               type: 'image',
+    //               uploadTime: DateTime.now()
+    //             );
+    //             return DetectionAnnotationWidget(
+    //               imageBytes: snapshot.data!.buffer.asUint8List(),
+    //               project: project,
+    //               media: media
+    //             );
+    //           }
+    //           return const SizedBox.shrink();
+    //         },
+    //       );
+    //     }
+    //     return const SizedBox.shrink();
+    //   }
+    // );
   }
 }

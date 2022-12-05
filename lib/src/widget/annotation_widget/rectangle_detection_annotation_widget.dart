@@ -9,7 +9,9 @@ import 'package:intel_geti_ui/src/helper/ui_logic.dart';
 import 'package:intel_geti_ui/src/util/annotation_painter.dart';
 import 'package:zoom_widget/zoom_widget.dart';
 
-import 'widget.dart';
+import '../bimodal_appbar.dart';
+import 'components/components.dart';
+
 
 class DetectionAnnotationWidget extends StatefulWidget {
   // Appbar attributes
@@ -26,10 +28,6 @@ class DetectionAnnotationWidget extends StatefulWidget {
   final int resizeHitPointRadius;
   final double maxZoom;
   // Bridges
-  final ValueNotifier<bool> appBarOnOffStatus;
-  final ValueNotifier<String> modeStatus;
-  final StreamController<List<Annotation>> annotationsStatus;
-  final StreamController<Annotation> selectedAnnotationStatus;
   // GETi
   final Project project;
   final Media media;
@@ -55,10 +53,6 @@ class DetectionAnnotationWidget extends StatefulWidget {
     required this.imageBytes,
     this.resizeHitPointRadius = 100,
     this.maxZoom = 2.0,
-    required this.appBarOnOffStatus,
-    required this.modeStatus,
-    required this.annotationsStatus,
-    required this.selectedAnnotationStatus,
     required this.project,
     required this.media,
     this.kind = 'annotation',
@@ -76,6 +70,11 @@ class DetectionAnnotationWidget extends StatefulWidget {
 class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
   final GlobalKey _imageKey = GlobalKey();
 
+
+  StreamController<List<Annotation>> annotationsStatus = StreamController.broadcast();
+  StreamController<Annotation> selectedAnnotationStatus = StreamController.broadcast();
+  ValueNotifier<bool> appBarOnOffStatus = ValueNotifier(true);
+  ValueNotifier<String> modeStatus = ValueNotifier('VIEW');
   List<Annotation> allAnnotations = [];
   Annotation? selectedAnnotation;
 
@@ -130,20 +129,20 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
             // Step IV
             (newAnnotation!.shape as RectangleAnnotationShape).setDimensionWithRect(getiRect);
             // Step V
-            widget.selectedAnnotationStatus.add(newAnnotation!);
+            selectedAnnotationStatus.add(newAnnotation!);
           },
           onPanEnd: (DragEndDetails details) {
             // On drag end, determine the validity of new annotation.
             if ((newAnnotation!.shape as RectangleAnnotationShape).isValid(imageHeight: widget.media.mediaInformation.height, imageWidth: widget.media.mediaInformation.width)) {
               // Keep new annotation if valid and switch to resize mode
-              widget.modeStatus.value = 'RESIZE';
-              widget.appBarOnOffStatus.value = false;
+              modeStatus.value = 'RESIZE';
+              appBarOnOffStatus.value = false;
               selectedAnnotation = newAnnotation;
-              widget.selectedAnnotationStatus.add(selectedAnnotation!);
+              selectedAnnotationStatus.add(selectedAnnotation!);
             }
             else {
               // If invalid, repaint the canvas with a dummy annotation.
-              widget.selectedAnnotationStatus.add(Annotation.dummy(type: newAnnotation!.shape.type));
+              selectedAnnotationStatus.add(Annotation.dummy(type: newAnnotation!.shape.type));
             }
             // Clear settings
             startPoint = null;
@@ -238,7 +237,7 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                 // Step IV
                 (selectedAnnotation!.shape as RectangleAnnotationShape).setDimensionWithRect(getiRect);
                 // Step V
-                widget.selectedAnnotationStatus.add(selectedAnnotation!);
+                selectedAnnotationStatus.add(selectedAnnotation!);
               }else{
                 /// Relocate event handling
                 /// Step II - Calculate delta (offset) from the inital point
@@ -254,7 +253,7 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                 (selectedAnnotation!.shape as RectangleAnnotationShape).x = (original!.shape as RectangleAnnotationShape).x + getiDelta.dx;
                 (selectedAnnotation!.shape as RectangleAnnotationShape).y = (original!.shape as RectangleAnnotationShape).y + getiDelta.dy;
                 // Step V
-                widget.selectedAnnotationStatus.add(selectedAnnotation!);
+                selectedAnnotationStatus.add(selectedAnnotation!);
               }
             }
           },
@@ -266,7 +265,7 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
             else {
               // If invalid, replace with annotation with the original. Then, redraw.
               selectedAnnotation = original;
-              widget.selectedAnnotationStatus.add(selectedAnnotation!);
+              selectedAnnotationStatus.add(selectedAnnotation!);
             }
             // Clear settings
             isResizeEvent = null;
@@ -285,12 +284,12 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
             Annotation? clickedAnnotation = pointInsideAnnotation(renderBox, touchPoint, allAnnotations, widget.media);
             // If yes, mark the rect
             if (clickedAnnotation != null){
-              widget.modeStatus.value = 'RESIZE';
-              widget.appBarOnOffStatus.value = false;
+              modeStatus.value = 'RESIZE';
+              appBarOnOffStatus.value = false;
               selectedAnnotation = clickedAnnotation;
               allAnnotations.remove(clickedAnnotation);
-              widget.annotationsStatus.add(allAnnotations);
-              widget.selectedAnnotationStatus.add(clickedAnnotation);
+              annotationsStatus.add(allAnnotations);
+              selectedAnnotationStatus.add(clickedAnnotation);
             }
           },
         );
@@ -303,7 +302,7 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BimodalDynamicAppBar(
-        isOn: widget.appBarOnOffStatus,
+        isOn: appBarOnOffStatus,
         onAppbar: AppBar(
           title: Text(widget.onAppbarTitle),
           leading: widget.onAppbarLeading,
@@ -314,12 +313,12 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
           title: Text(widget.offAppbarTitle),
           leading: widget.offAppbarLeading ?? IconButton(
             onPressed: () {
-              widget.appBarOnOffStatus.value = true;
+              appBarOnOffStatus.value = true;
               allAnnotations.add(selectedAnnotation!);
               selectedAnnotation = null;
-              widget.modeStatus.value = 'VIEW';
-              widget.annotationsStatus.add(allAnnotations);
-              widget.selectedAnnotationStatus.add(Annotation.dummy(type: 'RECTANGLE'));
+              modeStatus.value = 'VIEW';
+              annotationsStatus.add(allAnnotations);
+              selectedAnnotationStatus.add(Annotation.dummy(type: 'RECTANGLE'));
             },
             icon: const Icon(Icons.arrow_back)
           ),
@@ -369,7 +368,7 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                               // Master painter layer - Responsible for painting all annotations
                               StreamBuilder<List<Annotation>>(
                                 initialData: allAnnotations,
-                                stream: widget.annotationsStatus.stream,
+                                stream: annotationsStatus.stream,
                                 builder: (context, snapshot) {
                                   return ValueListenableBuilder<double>(
                                     valueListenable: zoomController,
@@ -389,7 +388,7 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                               // Master edit painter layer - Responsible for painting selected annotation
                               StreamBuilder<Annotation>(
                                 initialData: Annotation.dummy(type: 'RECTANGLE'),
-                                stream: widget.selectedAnnotationStatus.stream,
+                                stream: selectedAnnotationStatus.stream,
                                 builder: (context, snapshot) {
                                   return ValueListenableBuilder<double>(
                                     valueListenable: zoomController,
@@ -400,7 +399,7 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                                           media: widget.media,
                                           annotations: [snapshot.data!],
                                           kind: widget.kind,
-                                          isResizeMode: widget.modeStatus.value == 'RESIZE'
+                                          isResizeMode: modeStatus.value == 'RESIZE'
                                         )
                                       );
                                     }
@@ -409,7 +408,7 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                               ),
                               // User interaction layer
                               ValueListenableBuilder<String>(
-                                valueListenable: widget.modeStatus,
+                                valueListenable: modeStatus,
                                 builder: (BuildContext context, String modeValue, Widget? child) => uiModeWidgetSwitch(modeValue)!
                               )
                             ]
@@ -425,7 +424,7 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
           ),
           // Toolbar layer
           ValueListenableBuilder<bool>(
-            valueListenable: widget.appBarOnOffStatus,
+            valueListenable: appBarOnOffStatus,
             builder: (BuildContext context, bool value, Widget? child){
               if (value){
                 return Positioned(
@@ -440,10 +439,10 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                         onIconBackgroundColor: const Color(0xff8c8c8c),
                         offIconBackgroundColor: const Color(0xffd9d9d9),
                         onTapFunc: () {
-                          if (widget.modeStatus.value == 'NEW'){
-                            widget.modeStatus.value = 'VIEW';
+                          if (modeStatus.value == 'NEW'){
+                            modeStatus.value = 'VIEW';
                           } else {
-                            widget.modeStatus.value = 'NEW';
+                            modeStatus.value = 'NEW';
                           }
                         },
                       )
@@ -515,11 +514,11 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                                 selectedAnnotation!.labels = [AnnotationLabel(label: label, probability: 1.0, userId: '')];
                                 allAnnotations.add(selectedAnnotation!);
                                 // Reset view
-                                widget.selectedAnnotationStatus.add(Annotation.dummy(type: selectedAnnotation!.shape.type));
+                                selectedAnnotationStatus.add(Annotation.dummy(type: selectedAnnotation!.shape.type));
                                 selectedAnnotation = null;
-                                widget.annotationsStatus.add(allAnnotations);
-                                widget.appBarOnOffStatus.value = true;
-                                widget.modeStatus.value = 'VIEW';
+                                annotationsStatus.add(allAnnotations);
+                                appBarOnOffStatus.value = true;
+                                modeStatus.value = 'VIEW';
                               }
                             });
                           }
@@ -541,10 +540,10 @@ class DetectionAnnotationWidgetState extends State<DetectionAnnotationWidget> {
                               )
                             ).then((deleteApproved) {
                               if (deleteApproved){
-                                widget.selectedAnnotationStatus.add(Annotation.dummy(type: selectedAnnotation!.shape.type));
+                                selectedAnnotationStatus.add(Annotation.dummy(type: selectedAnnotation!.shape.type));
                                 selectedAnnotation = null;
-                                widget.appBarOnOffStatus.value = true;
-                                widget.modeStatus.value = 'VIEW';
+                                appBarOnOffStatus.value = true;
+                                modeStatus.value = 'VIEW';
                               }
                             });
                           }
